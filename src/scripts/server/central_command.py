@@ -14,4 +14,3 @@ def command_center(data: dict):
         if data['command'] in command_to_func:
             command_to_func[data['command']](**data['args'])
     
-    #LOG error in recieved command

@@ -12,16 +12,17 @@ BAUD_RATE = 115200
 
 logger = getLogger("SerialReader")
 
-def main():
-    print("Start connection")
+def init():
     try:
+        global ser
         ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
         logger.info(f"Opened serial port {SERIAL_PORT} at {BAUD_RATE} baud.")
+        read()
     except Exception as e:
         logger.error(f"Failed to open serial port {SERIAL_PORT}: {e}")
         return  # No point continuing if we can't open serial
 
-    print("Start reading")
+def read():
     while True:
         try:            
             line = ser.readline().decode('utf-8', errors='replace').strip()
@@ -51,5 +52,10 @@ def main():
     ser.close()
     logger.info("SerialReader main loop exited, serial port closed.")
 
+def write(data):
+    json_data = json.dump(data)
+    ser.write(json_data)
+
 if __name__ == "__main__":
-    main()
+    init()
+    read()

@@ -2,15 +2,15 @@ import uuid
 import time
 from collections import defaultdict
 
-
-
 # Internal Ranking
-#    We'll keep a dict {kart_id: {"index": track_index, "laps": int, "position": (x,y)}}
+#    We'll keep a dict {kart_id: {"index": track_index, "laps": int}}
 #    Then, on each update, we recompute an ordered list for who is leading.
 kart_data = {}
 kart_positions = []
 
 # Items
+ITEMS = ["banana", "bob-omb", "red_shroom", "lightning", "bullet_bill", "gold_shroom", "red_shell", "blue_shell"]
+
 #   A dict that maps item names to their targets relative to the player that used it
 ITEM_TARGET = {
     "banana": {"target":[-1]}, # 0% chance for last
@@ -25,7 +25,9 @@ ITEM_TARGET = {
 
 # Player -> Items (inventory or current item)
 #    A dict of lists or single slots, depending on your design.
-player_items = defaultdict(str)  # e.g. player_items[kart_id] = ["banana"]
+# player_items = defaultdict(str)  # e.g. player_items[kart_id] = ["banana"]
+
+
 
 # Item Weights (based on rank)
 ITEM_WEIGHTS = {
@@ -108,26 +110,29 @@ ITEM_WEIGHTS = {
     }
 }
 
-# Coordinate to Index
+# TODO: Coordinate to Index
 #    Mapping from (x,y) or a grid region to a "track_index."
 #    For simplicity, let’s say we store boundaries for each index.
 COORDINATE_TO_INDEX = [
     # e.g., [ {"index": 0, "xrange": (0,10), "yrange": (0,5)}, ... ]
 ]
 
-# Item Index
+# TODO:Item Index 
 #    The list of track indices that award an item
 ITEM_INDEX = {10, 25, 50}  # example track positions
 
-# Finish Line Index
+# TODO: Finish Line Index
 END_INDEX = 2000  # track position that indicates a lap crossing
 
 
 def convert_coordinate_to_index(x: int, y: int) -> int:
-    return 0
+    return y #Placeholder for testing
 
 def select_item_for_kart(rank: int) -> str:
     return
 
-def update_ranking():
-    return
+def update_rankings():
+    global kart_positions
+    new_rank = list(kart_data.keys())
+    new_rank.sort(key = lambda x: (kart_data[x]["laps"], kart_data[x]["index"]), reverse = True)
+    kart_positions = new_rank

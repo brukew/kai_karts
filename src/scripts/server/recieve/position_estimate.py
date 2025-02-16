@@ -6,62 +6,66 @@ from ..utils import (
     ITEM_INDEX,
     convert_coordinate_to_index,
     select_item_for_kart,
-    player_items,
     END_INDEX,
-    update_ranking,
+    update_rankings,
+    kart_data
 )
 
-import uuid
-from ..send import send_item
+from logging import getLogger
 
-MIN_DIFF_NOISE = END_INDEX - END_INDEX*0.1
+logger = getLogger()
+
+import uuid
+from ..send.send_item import send_item
+
+FINISH_LINE_ERROR = 0.8
 
 def check_cross_finish(old_ix, new_ix) -> bool:
-    ''' Logic to check if kart passed finish line vs. went backwards
-        1098 -> 5
-        vs 
-        5 -> 0
+    '''Return True if the difference between old_ix and new_ix indicates a finish-line crossing. Assume indices wrap around at END_INDEX.'''
+    # Compute the forward difference on a circular track.
+    diff = (old_ix - new_ix) % END_INDEX
+    # If diff is close to the full track length (> FINISH_LINE_ERROR% of END_INDEX), consider it a lap crossing.
+    return diff >= END_INDEX * FINISH_LINE_ERROR
 
-        need to account for 5 -> 1098 then 1098 -> 5 (should not count as another lap)
-    '''
-    # TODO: Revise for correctness and robustness against hacking (going back and forth between finish line)
-    if new_ix > old_ix:
-        return False
+def passed_checkpoint(kart_id):
+    new_item = select_item_for_kart(kart_id)
+    event_uid = str(uuid.uuid4())  # unique event identifier
+    logger.info(f"Kart {kart_id} recieved a {new_item}!")
+    send_item(kart_id, new_item, event_uid)
 
-    return old_ix - new_ix >= MIN_DIFF_NOISE
-
-def handle_position_estimate(kart_id, pos):
-    """
+def check_traversed_indices(kart_id, old_index, new_index, current_data):
+    traversed = set()
+    # if went backwards - did not traverse any new indices
+    if new_index < old_index: # either passed finish line or went backwards
+        if check_cross_finish(old_index, new_index):
+            current_data["laps"] += 1
+            logger.info(f"Kart {kart_id} completed Lap {current_data['laps']}!")
+            traversed = set(range(old_index, END_INDEX)) | set(range(0, new_index))
+        else:
+            logger.debug(f"Kart {kart_id} went backward {old_index-new_index} indices!")
+    else: # went forward
+        traversed = set(range(old_index, new_index))
+        logger.debug(f"Kart {kart_id} went forward {new_index-old_index} indices!")
     
+    passed_checkpoints = traversed.intersection(ITEM_INDEX)
+    if passed_checkpoints:
+        logger.info(f"Kart {kart_id} passed Item Checkpoint at {passed_checkpoints}!")
+        passed_checkpoint(kart_id)
+
+def handle_position_estimate(kart_id, loc_index):
     """
-    x, y = pos
-    track_index = convert_coordinate_to_index(x, y)
-    current_data = kart_positions.get(kart_id, {"index": 0, "laps": 0, "position": (0,0)})
+    Handles updating position based on new kart positions
+    """
+    new_index = loc_index
+    current_data = kart_data.get(kart_id, None)
+    if not current_data:
+        current_data = {"index": new_index, "laps": 0}
+
     old_index = current_data["index"]
 
-    #TODO: verify location 
+    current_data["index"] = new_index
 
-    current_data["index"] = track_index
-    current_data["position"] = (x, y)
+    check_traversed_indices(kart_id, old_index, new_index, current_data)
 
-    if track_index < old_index: # either passed finish line or went backwards
-        if check_cross_finish(old_index, track_index):
-            current_data["laps"] += 1
-            print(f"Kart {kart_id} completed lap {current_data['laps']}")
-
-    traversed = {i for i in range(old_index, track_index)}
-    #TODO: fix this logic if track_index is < old_index b/c it went backwards or /c it crossed finish line
-    
-    if traversed.intersection(ITEM_INDEX):
-        new_item = select_item_for_kart(kart_id)
-        # Store item in player_items
-        event_uid = str(uuid.uuid4())  # unique event identifier
-        player_items[kart_id] = new_item
-        # Possibly send "Send Item" message to that kart
-        send_item(kart_id, new_item, event_uid)
-
-    kart_positions[kart_id] = current_data
-    update_ranking()
-
-    # logger()
-    # log_action("PositionEstimate", {"kart_id": kart_id, "position": (x, y), "index": track_index})
+    kart_data[kart_id] = current_data
+    update_rankings()
