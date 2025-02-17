@@ -19,8 +19,11 @@ def handle_position_estimate(data):
     '''
     logger.info(f"Position Estimate data recieved: {data}")
     kart_id = data["from"]
+    x = data['x']
+    y = data['y']
+    pos = (data['x'], data['y'])
     loc_index = data["loc_index"]
-    update_game(kart_id, loc_index)
+    update_game(kart_id, loc_index, pos)
     write_packet(build_ranking_update_packet(globals.get_kart_positions()))
     return
 
@@ -80,13 +83,13 @@ def read_packet(executor):
         return None
     tag = struct.unpack('<I', tag_bytes)[0]
 
-    if tag == 2:  # PositionEstimate: { u32 from; u32 loc_index}
+    if tag == 2:  # PositionEstimate: { u32 from; u32 x; u32 y; u32 loc_index}
         payload = globals.ser.read(4 + 4)  # 8 bytes total
         if len(payload) < 8:
             return None
-        from_val, loc_index = struct.unpack('<II', payload)
-        executor.submit(handle_position_estimate, {'from': from_val, 'loc_index': loc_index})
-        return {'tag': 'PositionEstimate', 'from': from_val}
+        from_val, x, y, loc_index = struct.unpack('<II', payload)
+        executor.submit(handle_position_estimate, {'from': from_val, 'x': x, 'y': y, 'loc_index': loc_index})
+        return {'tag': 'PositionEstimate', 'from': from_val, 'x': x, 'y': y, 'loc_index': loc_index}
     
     elif tag == 3:  # UseItem: { u32 from; u32 item; u32 uid}
         payload = globals.ser.read(4 + 4 + 4)  # 12 bytes

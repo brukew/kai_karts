@@ -49,7 +49,7 @@ def check_traversed_indices(kart_id, old_index, new_index, current_data):
         logger.info(f"Kart {kart_id} passed Item Checkpoint at {passed_checkpoints}!")
         passed_checkpoint(kart_id)
 
-def update_game(kart_id, loc_index):
+def update_game(kart_id, loc_index, pos): # TODO: deal with pos
     """
     Handles updating position based on new kart positions
     """
