@@ -7,6 +7,13 @@ global ITEM_TARGET
 global END_INDEX
 global seen_uids
 
+import threading
+
+# Create a lock object.
+global_lock = threading.Lock()
+
+PACKET_LEN_BYTES = 24
+
 # ordered list of kart positions
 kart_positions = []
 
@@ -32,8 +39,25 @@ ITEM_TARGET = {
     "blue_shell": {"target":"first"}
 }
 
-
 # TODO: Finish Line Index
 END_INDEX = 2000  # track position that indicates a lap crossing
 
 seen_uids = set()
+
+def update_kart_data(kart_id, new_data):
+    global kart_data
+    with global_lock:
+        kart_data[kart_id] = new_data
+
+def update_kart_positions(new_positions):
+    global kart_positions
+    with global_lock:
+        kart_positions = new_positions
+
+def get_kart_data():
+    with global_lock:
+        return kart_data
+
+def get_kart_positions():
+    with global_lock:
+        return kart_positions

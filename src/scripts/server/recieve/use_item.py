@@ -9,7 +9,7 @@ def use_item(kart_id: int, item: int) -> list:
     '''
     Determines kart id of all victims based on item.
 
-    Returns list of (victim_id, event_id)
+    Returns list containing (victim_id, event_id) for each victim
     '''
     try:
         item_name = ITEMS[item]
@@ -25,28 +25,28 @@ def use_item(kart_id: int, item: int) -> list:
     # Determine victims based on the target type.
     if item_targets == "first":
         # Target the leader.
-        victim_ids = [globals.kart_positions[0]] if globals.kart_positions else []
+        victim_ids = [globals.get_kart_positions()[0]] if globals.get_kart_positions() else []
     
     elif item_targets == "all":
         # Target every kart except the one using the item.
-        victim_ids = globals.kart_positions.copy()
+        victim_ids = globals.get_kart_positions().copy()
         if kart_id in victim_ids:
             victim_ids.remove(kart_id)
     
     elif isinstance(item_targets, list):
         try:
-            kart_ix = globals.kart_positions.index(kart_id)
+            kart_ix = globals.get_kart_positions().index(kart_id)
         except ValueError:
             logger.warning(f"Use Item: Kart ID {kart_id} not found in ranking.")
             return
         
-        # Compute absolute target indices.
+        # Compute absolute target indices. (subtraction because ordered list is descending position)
         victim_ix = [kart_ix - target for target in item_targets]
         # Ensure indices are within bounds of kart_positions.
         victim_ids = [
-            globals.kart_positions[ix]
+            globals.get_kart_positions()[ix]
             for ix in victim_ix
-            if ix >= 0 and ix < len(globals.kart_positions)
+            if ix >= 0 and ix < len(globals.get_kart_positions())
         ]
     else:
         logger.warning(f"Use Item: Unexpected target type for item '{item_name}': {item_targets}")

@@ -1,12 +1,15 @@
 import struct
 from logging import getLogger
 from .recieve.position_estimate import update_game
-import utils
 import globals
 from .recieve.use_item import use_item
+import threading
+
+write_lock = threading.Lock()
 
 # Define the magic number (packet start marker)
 PACKET_START_MAGIC = 0xDEADBEEF
+PACKET_LEN_BYTES = 24
 
 logger = getLogger("SerialReader")
 
@@ -14,28 +17,32 @@ def handle_position_estimate(data):
     ''' 
     Takes in positon estimate from kart and updates game state
     '''
-    print("PositionEstimate:", data)
+    logger.info(f"Position Estimate data recieved: {data}")
     kart_id = data["from"]
     loc_index = data["loc_index"]
-    track_id = data["track_id"]
-    update_game(kart_id, loc_index, track_id)
-    write_packet(build_ranking_update_packet(globals.kart_positions))
+    update_game(kart_id, loc_index)
+    write_packet(build_ranking_update_packet(globals.get_kart_positions()))
     return
 
 def handle_use_item(data):
-    print("UseItem:", data)
+    logger.info(f"Use Item data recieved: {data}")
     kart_id = data['from']
     item = data['item']
     uid = data['uid']
-    if uid not in utils.seen_uids:
-        utils.seen_uids.add(uid)
+    if uid not in globals.seen_uids:
+        globals.seen_uids.add(uid)
         victims = use_item(kart_id, item)
         for victim, uid in victims:
             write_packet(build_do_item_packet(victim, item, uid))
     return
 
+def send_item(kart_id, event_uid):
+    write_packet(build_get_item_packet(kart_id, event_uid))
+
 def write_packet(packet):
-    globals.ser.write(packet)
+    packet += bytes([0] * (globals.PACKET_LEN_BYTES - len(packet)))
+    with write_lock:
+        globals.ser.write(packet)
 
 def build_packet(tag, payload_bytes):
     """Build a complete packet with start magic, tag, and payload."""
@@ -54,8 +61,13 @@ def build_do_item_packet(to_val, item, uid):
     payload = struct.pack('<III', to_val, item, uid)
     return build_packet(6, payload)
 
-def read_packet():
-# look for magic number
+def build_get_item_packet(to_val, uid):
+    # tag 5
+    payload = struct.pack('<II', to_val, uid)
+    return build_packet(5, payload)
+    
+def read_packet(executor):
+    # look for magic number
     maybe_magic = bytes([0, 0, 0, 0])
     while True:
         maybe_magic = maybe_magic[1:] + globals.ser.read(1)
@@ -68,20 +80,20 @@ def read_packet():
         return None
     tag = struct.unpack('<I', tag_bytes)[0]
 
-    if tag == 2:  # PositionEstimate: { u32 from; i32 loc_index; u32 track_id }
-        payload = globals.ser.read(4 + 4 + 4)  # 12 bytes total
-        if len(payload) < 12:
+    if tag == 2:  # PositionEstimate: { u32 from; u32 loc_index}
+        payload = globals.ser.read(4 + 4)  # 8 bytes total
+        if len(payload) < 8:
             return None
-        from_val, loc_index, track_id = struct.unpack('<IiI', payload)
-        handle_position_estimate({'from': from_val, 'loc_index': loc_index, 'track_id': track_id})
-        return {'tag': 'PositionEstimate', 'from': from_val, 'loc_index': loc_index}
+        from_val, loc_index = struct.unpack('<II', payload)
+        executor.submit(handle_position_estimate, {'from': from_val, 'loc_index': loc_index})
+        return {'tag': 'PositionEstimate', 'from': from_val}
     
     elif tag == 3:  # UseItem: { u32 from; u32 item; u32 uid}
         payload = globals.ser.read(4 + 4 + 4)  # 12 bytes
         if len(payload) < 12:
             return None
         from_val, item, uid= struct.unpack('<III', payload)
-        handle_use_item({'from': from_val, 'item': item, 'uid': uid})
+        executor.submit(handle_use_item, {'from': from_val, 'item': item, 'uid': uid})
         return {'tag': 'UseItem', 'from': from_val, 'item': item, 'uid': uid}
     
     else:
