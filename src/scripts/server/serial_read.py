@@ -87,7 +87,7 @@ def read_packet(executor):
         payload = globals.ser.read(4 + 4)  # 8 bytes total
         if len(payload) < 8:
             return None
-        from_val, x, y, loc_index = struct.unpack('<II', payload)
+        from_val, x, y, loc_index = struct.unpack('<IIII', payload)
         executor.submit(handle_position_estimate, {'from': from_val, 'x': x, 'y': y, 'loc_index': loc_index})
         return {'tag': 'PositionEstimate', 'from': from_val, 'x': x, 'y': y, 'loc_index': loc_index}
     
