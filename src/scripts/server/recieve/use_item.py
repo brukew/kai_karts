@@ -1,7 +1,6 @@
-from globals import ITEM_TARGET, ITEMS
+from .. import globals
 from server.send.apply_item import apply_item
 from logging import getLogger
-import globals
 
 logger = getLogger()
 
@@ -12,12 +11,13 @@ def use_item(kart_id: int, item: int) -> list:
     Returns list containing (victim_id, event_id) for each victim
     '''
     try:
-        item_name = ITEMS[item]
+        item_name = globals.ITEMS[item]
     except IndexError:
         logger.warning(f"Use Item: Invalid item index {item} for kart {kart_id}.")
         return
 
-    item_targets = ITEM_TARGET.get(item_name)
+    item_targets = globals.ITEM_TARGET.get(item_name)
+    print(f"Item targets: {item_targets}")
     if item_targets is None:
         logger.warning(f"Use Item: No target configuration for item '{item_name}'")
         return

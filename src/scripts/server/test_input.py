@@ -1,15 +1,18 @@
 import threading
-from concurrent.futures import ThreadPoolExecutor
-from read_serial import build_ranking_update_packet, build_get_item_packet, build_do_item_packet, write_packet
+from .serial_read import build_ranking_update_packet, build_get_item_packet, build_do_item_packet, write_packet
+import logging
+from .globals import get_kart_positions, ITEMS
 
+logger = logging.getLogger("SerialReader").setLevel(logging.INFO)
 
 def run_ranking_update(*args):
-    # For example, get the current ranking from globals and build the packet.
-    packet = build_ranking_update_packet(globals.get_kart_positions())
+    print("Ranking update command received.")
+    packet = build_ranking_update_packet(get_kart_positions())
     write_packet(packet)
 
 def run_get_item(*args):
     # Example: args[0] is kart_id, args[1] is event_uid
+    print("Get item command received.")
     if len(args) < 2:
         print("Usage: get_item <kart_id> <event_uid>")
         return
@@ -19,10 +22,12 @@ def run_get_item(*args):
 
 def run_do_item(*args):
     # Example: args[0] is kart_id, args[1] is item, args[2] is uid
+    print("Do item command received.")
     if len(args) < 3:
         print("Usage: do_item <kart_id> <item> <uid>")
         return
     kart_id, item, uid = args[0], args[1], args[2]
+    print(f"Kart {kart_id} using or hit with item {ITEMS[int(item)]} with event_uid {uid}")
     packet = build_do_item_packet(int(kart_id), int(item), int(uid))
     write_packet(packet)
 
@@ -38,13 +43,18 @@ def command_input_loop(executor):
             command = parts[0]
             args = parts[1:]
             
-            if command == "ranking_update":
+            if command == "ru":
                 # Submit ranking update to the executor.
-                executor.submit(run_ranking_update, *args)
-            elif command == "get_item":
-                executor.submit(run_get_item, *args)
-            elif command == "do_item":
-                executor.submit(run_do_item, *args)
+                print("yer")
+                # thread = executor.submit(run_ranking_update, *args)
+                # thread.result()
+                run_ranking_update()
+            elif command == "gi":
+                thread = executor.submit(run_get_item, *args)
+                thread.result()
+            elif command == "dei":
+                thread = executor.submit(run_do_item, *args)
+                thread.result()
             else:
                 print("Unknown command. Valid commands: ranking_update, get_item, do_item")
         except Exception as e:

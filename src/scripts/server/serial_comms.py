@@ -1,29 +1,27 @@
 import serial
 from logging import getLogger
-from serial_read import read_packet, start_read
-import globals
+from .serial_read import read_packet
+from . import globals
 from concurrent.futures import ThreadPoolExecutor
+from .test_input import input_init
+import time
 
-
-# Create a pool with a fixed number of worker threads.
 executor = ThreadPoolExecutor(max_workers=10)
-
-SERIAL_PORT = "/dev/tty.usbmodem1401"
-BAUD_RATE = 115200
 
 logger = getLogger("SerialReader")
 
 def init():
     try:
-        globals.ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
-        logger.info(f"Opened serial port {SERIAL_PORT} at {BAUD_RATE} baud.")
-        while True:
-            packet = read_packet(executor)
-            if packet is None:
-                continue 
-        # start_read()
-        # thread = threading.Thread(target=read_packet)
-        # thread.start()
+        globals.ser = serial.Serial(globals.SERIAL_PORT, globals.BAUD_RATE, timeout=1)
+        print(f"Opened serial port {globals.SERIAL_PORT} at {globals.BAUD_RATE} baud.")
     except Exception as e:
-        logger.error(f"Failed to open serial port {SERIAL_PORT}: {e}")
+        logger.error(f"Failed to open serial port {globals.SERIAL_PORT}: {e}")
         return  # No point continuing if we can't open serial
+    print("Init input test.")
+    input_init(executor)
+    while True:
+        # print("Reading packet.")
+        packet = read_packet(executor)
+        time.sleep(0.01)
+        if packet is None:
+            continue 
