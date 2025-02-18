@@ -17,14 +17,25 @@ def handle_position_estimate(data):
     ''' 
     Takes in positon estimate from kart and updates game state
     '''
-    # print(f"Position Estimate data recieved: {data}")
+    print(f"Position Estimate data recieved: {data}")
+    globals.GAME_STATE_CHANGED = False
     kart_id = data["from"]
     pos = (data['x'], data['y'])
     loc_index = data["loc_index"]
     event = update_game(kart_id, loc_index, pos)
     if event:
         send_item(kart_id, event)
-    write_packet(build_ranking_update_packet(globals.get_kart_positions()))
+    # This gets set to True if kart positions or kart rank is hit in globals 
+    if globals.GAME_STATE_CHANGED:
+        rankings = globals.get_kart_positions()
+        # collect x and y positions of every kart
+        x_positions = []
+        y_positions = []
+        for kart_id in rankings:
+            kart_pos = globals.get_kart_data()[kart_id]["pos"]
+            x_positions.append(kart_pos[0])
+            y_positions.append(kart_pos[1])
+        write_packet(build_ranking_update_packet(rankings, x_positions, y_positions))
     return
 
 def handle_use_item(data):
@@ -58,10 +69,10 @@ def build_packet(tag, payload_bytes):
     packet += payload_bytes
     return packet
 
-def build_ranking_update_packet(positions):
+def build_ranking_update_packet(rankings, x_positions, y_positions):
     # tag 4
     print("Building ranking update packet")
-    payload = struct.pack('<' + 'B' * len(positions), *positions)
+    payload = struct.pack('<' + 'B' * len(rankings) + 'B' * len(x_positions) + 'B' * len(y_positions), rankings, x_positions, y_positions)
     return build_packet(4, payload)
 
 def build_do_item_packet(to_val, item, uid):
