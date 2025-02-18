@@ -1,9 +1,6 @@
 import threading
 from .serial_read import build_ranking_update_packet, build_get_item_packet, build_do_item_packet, write_packet
-import logging
 from .globals import get_kart_positions, ITEMS
-
-logger = logging.getLogger("SerialReader").setLevel(logging.INFO)
 
 def run_ranking_update(*args):
     print("Ranking update command received.")

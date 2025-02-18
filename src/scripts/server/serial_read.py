@@ -1,5 +1,4 @@
 import struct
-import logging
 from .recieve.position_estimate import update_game
 from . import globals
 from .recieve.use_item import use_item
@@ -10,8 +9,6 @@ write_lock = threading.Lock()
 # Define the magic number (packet start marker)
 PACKET_START_MAGIC = 0xDEADBEEF
 PACKET_LEN_BYTES = 24
-
-logger = logging.getLogger("SerialReader").setLevel(logging.INFO)
 
 def handle_position_estimate(data):
     ''' 
@@ -71,17 +68,25 @@ def build_packet(tag, payload_bytes):
 
 def build_ranking_update_packet(rankings, x_positions, y_positions):
     # tag 4
+    # u8 rankings[NUM_KARTS];
+    # u32 x_positions[NUM_KARTS];
+    # u32 y_positions[NUM_KARTS];
     print("Building ranking update packet")
     payload = struct.pack('<' + 'B' * len(rankings) + 'B' * len(x_positions) + 'B' * len(y_positions), rankings, x_positions, y_positions)
     return build_packet(4, payload)
 
 def build_do_item_packet(to_val, item, uid):
     # tag 6
+    # u32 to;
+    # u32 item;
+    # u32 uid; 
     payload = struct.pack('<III', to_val, item, uid)
     return build_packet(6, payload)
 
 def build_get_item_packet(to_val, uid):
     # tag 5
+    # u32 to;
+    # u32 uid;
     payload = struct.pack('<II', to_val, uid)
     return build_packet(5, payload)
     

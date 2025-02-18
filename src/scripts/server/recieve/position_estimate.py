@@ -7,11 +7,7 @@ from ..utils import (
 
 from .. import globals
 
-from logging import getLogger
-
 import threading
-
-logger = getLogger()
 
 lock = threading.Lock()
 
@@ -33,10 +29,10 @@ def check_traversed_indices(kart_id, old_index, new_index, current_data):
             print(f"Kart {kart_id} completed Lap {current_data['laps']}!")
             traversed = set(range(old_index, globals.END_INDEX)) | set(range(0, new_index))
         else:
-            logger.debug(f"Kart {kart_id} went backward {old_index-new_index} indices!")
+            print(f"Kart {kart_id} went backward {old_index-new_index} indices!")
     else: # went forward
         traversed = set(range(old_index, new_index))
-        logger.debug(f"Kart {kart_id} went forward {new_index-old_index} indices!")
+        print(f"Kart {kart_id} went forward {new_index-old_index} indices!")
 
     return traversed
 
