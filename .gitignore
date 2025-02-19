@@ -1,0 +1,6 @@
+src/scripts/server/send/__pycache__
+src/scripts/server/recieve/__pycache__
+src/scripts/server/__pycache__
+src/scripts/server/send/*.pyc
+src/scripts/server/recieve/*.pyc
+src/pi/

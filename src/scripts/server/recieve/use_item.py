@@ -1,8 +1,5 @@
 from .. import globals
 from server.send.apply_item import apply_item
-from logging import getLogger
-
-logger = getLogger()
 
 def use_item(kart_id: int, item: int) -> list:
     '''
@@ -13,13 +10,13 @@ def use_item(kart_id: int, item: int) -> list:
     try:
         item_name = globals.ITEMS[item]
     except IndexError:
-        logger.warning(f"Use Item: Invalid item index {item} for kart {kart_id}.")
+        print(f"Use Item: Invalid item index {item} for kart {kart_id}.")
         return
 
     item_targets = globals.ITEM_TARGET.get(item_name)
     print(f"Item targets: {item_targets}")
     if item_targets is None:
-        logger.warning(f"Use Item: No target configuration for item '{item_name}'")
+        print(f"Use Item: No target configuration for item '{item_name}'")
         return
 
     # Determine victims based on the target type.
@@ -37,7 +34,7 @@ def use_item(kart_id: int, item: int) -> list:
         try:
             kart_ix = globals.get_kart_positions().index(kart_id)
         except ValueError:
-            logger.warning(f"Use Item: Kart ID {kart_id} not found in ranking.")
+            print(f"Use Item: Kart ID {kart_id} not found in ranking.")
             return
         
         # Compute absolute target indices. (subtraction because ordered list is descending position)
@@ -49,7 +46,7 @@ def use_item(kart_id: int, item: int) -> list:
             if ix >= 0 and ix < len(globals.get_kart_positions())
         ]
     else:
-        logger.warning(f"Use Item: Unexpected target type for item '{item_name}': {item_targets}")
+        print(f"Use Item: Unexpected target type for item '{item_name}': {item_targets}")
         return []
 
     return apply_item(kart_id, item, victim_ids)

@@ -1,9 +1,9 @@
 import struct
-import logging
 from .recieve.position_estimate import update_game
 from . import globals
 from .recieve.use_item import use_item
 import threading
+import time
 
 write_lock = threading.Lock()
 
@@ -11,20 +11,20 @@ write_lock = threading.Lock()
 PACKET_START_MAGIC = 0xDEADBEEF
 PACKET_LEN_BYTES = 24
 
-logger = logging.getLogger("SerialReader").setLevel(logging.INFO)
-
 def handle_position_estimate(data):
     ''' 
     Takes in positon estimate from kart and updates game state
     '''
-    # print(f"Position Estimate data recieved: {data}")
+    print(f"Position Estimate data recieved: {data}")
+    globals.GAME_STATE_CHANGED = False
     kart_id = data["from"]
     pos = (data['x'], data['y'])
     loc_index = data["loc_index"]
     event = update_game(kart_id, loc_index, pos)
     if event:
         send_item(kart_id, event)
-    write_packet(build_ranking_update_packet(globals.get_kart_positions()))
+    if globals.GAME_STATE_CHANGED:
+        write_packet(build_ranking_update_packet(globals.get_kart_positions()))
     return
 
 def handle_use_item(data):

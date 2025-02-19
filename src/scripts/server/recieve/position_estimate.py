@@ -7,11 +7,7 @@ from ..utils import (
 
 from .. import globals
 
-from logging import getLogger
-
 import threading
-
-logger = getLogger()
 
 lock = threading.Lock()
 
@@ -24,18 +20,19 @@ def check_cross_finish(old_ix, new_ix) -> bool:
     return diff >= globals.END_INDEX * FINISH_LINE_ERROR
 
 def check_traversed_indices(kart_id, old_index, new_index, current_data):
-    # if went backwards - did not traverse any new indices
+    # collects traversed indices
     traversed = set()
-    if new_index < old_index: # either passed finish line or went backwards
+    if new_index < old_index: # if went backwards - it either passed finish line or went just drove backwards
         if check_cross_finish(old_index, new_index):
+            # update laps
             current_data["laps"] += 1
             print(f"Kart {kart_id} completed Lap {current_data['laps']}!")
             traversed = set(range(old_index, globals.END_INDEX)) | set(range(0, new_index))
         else:
-            logger.debug(f"Kart {kart_id} went backward {old_index-new_index} indices!")
+            print(f"Kart {kart_id} went backward {old_index-new_index} indices!")
     else: # went forward
         traversed = set(range(old_index, new_index))
-        logger.debug(f"Kart {kart_id} went forward {new_index-old_index} indices!")
+        print(f"Kart {kart_id} went forward {new_index-old_index} indices!")
 
     return traversed
 
@@ -45,21 +42,35 @@ def update_game(kart_id, loc_index, pos): # TODO: deal with pos
     """
     print("Updating game state for kart", kart_id, "to index", loc_index)
     new_index = loc_index
+    new_pos = pos
     current_data = globals.get_kart_data().get(kart_id, None)
+    # if kart is new, initialize data
     if not current_data:
-        current_data = {"index": new_index, "laps": 0}
+        current_data = {"index": new_index, "laps": 0, "pos": new_pos}
     old_index = current_data["index"]
+    # old_pos = current_data["pos"]
     current_data["index"] = new_index
+    current_data["pos"] = pos
 
+    # collect traversed indices and check if kart passed finish line
     traversed = check_traversed_indices(kart_id, old_index, new_index, current_data)
 
+    checkpoint = False
+    # check if kart passed any item checkpoints
     passed_checkpoints = traversed.intersection(globals.ITEM_INDEX)
     if passed_checkpoints:
-        print(f"Kart {kart_id} passed Item Checkpoint at {passed_checkpoints} and recieved an item!")
+        # check if kart passed the multi-path checkpoint
+        if len(passed_checkpoints) == 1 and globals.multi_path_checkpoint["index"] in passed_checkpoints:
+            if pos in globals.multi_path_checkpoint["points"]:
+                print(f"Kart {kart_id} passed Multi-Path Checkpoint at {passed_checkpoints} and recieved an item!")
+        else:
+            print(f"Kart {kart_id} passed Item Checkpoint at {passed_checkpoints} and recieved an item!")
         event_uid = globals.get_uid()
-        return event_uid
-    
+        checkpoint = True
+    else:
+        print("Kart passed no checkpoints")
+
     globals.update_kart_data(kart_id, current_data)
     update_rankings()
 
-    return
+    return event_uid if checkpoint else None

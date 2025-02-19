@@ -1,7 +1,3 @@
-from logging import getLogger
-
-logger = getLogger()
-
 from .. import globals
 
 def apply_item(kart_id, item, victims):
