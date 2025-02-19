@@ -12,7 +12,7 @@ import threading
 import random
 
 
-SERIAL_PORT = "/dev/tty.usbmodem101"
+SERIAL_PORT = "/dev/tty.usbmodem21401"
 BAUD_RATE = 115200
 ser = None
 
@@ -68,25 +68,25 @@ seen_uids = set()
 
 def update_kart_data(kart_id, new_data):
     global kart_data, GAME_STATE_CHANGED
-    with global_lock:
+    # with global_lock:
         # print(f"Updating kart {kart_id} data: {new_data}")
-        GAME_STATE_CHANGED = True
-        kart_data[kart_id] = new_data
+    GAME_STATE_CHANGED = True
+    kart_data[kart_id] = new_data
 
 def update_kart_positions(new_positions):
     global kart_positions, GAME_STATE_CHANGED
-    with global_lock:
+    # with global_lock:
         # print(f"Updating kart positions - old: {kart_positions}, new: {new_positions}")
-        GAME_STATE_CHANGED = True
-        kart_positions = new_positions
+    GAME_STATE_CHANGED = True
+    kart_positions = new_positions
 
 def get_kart_data():
-    with global_lock:
-        return kart_data
+    # with global_lock:
+    return kart_data
 
 def get_kart_positions():
-    with global_lock:
-        return kart_positions
+    # with global_lock:
+    return kart_positions
     
 def get_uid():
     return random.getrandbits(32)
