@@ -13,6 +13,8 @@ lock = threading.Lock()
 
 FINISH_LINE_ERROR = 0.8
 
+MAX_DIST_TRAVELLED = 0.8 * globals.END_INDEX
+
 def check_cross_finish(old_ix, new_ix) -> bool:
     '''Return True if the difference between old_ix and new_ix indicates a finish-line crossing. Assume indices wrap around at END_INDEX.'''
     diff = (old_ix - new_ix) % globals.END_INDEX
@@ -52,6 +54,10 @@ def update_game(kart_id, loc_index, pos): # TODO: deal with pos
     # old_pos = current_data["pos"]
     current_data["index"] = new_index
     current_data["pos"] = pos
+
+    if abs(new_index - old_index) > MAX_DIST_TRAVELLED: 
+        return None
+
 
     # collect traversed indices and check if kart passed finish line
     traversed = check_traversed_indices(kart_id, old_index, new_index, current_data)
