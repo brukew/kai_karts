@@ -26,13 +26,14 @@ def check_traversed_indices(kart_id, old_index, new_index, current_data):
         if check_cross_finish(old_index, new_index):
             # update laps
             current_data["laps"] += 1
-            print(f"Kart {kart_id} completed Lap {current_data['laps']}!")
+            # print(f"Kart {kart_id} completed Lap {current_data['laps']}!")
             traversed = set(range(old_index, globals.END_INDEX)) | set(range(0, new_index))
         else:
-            print(f"Kart {kart_id} went backward {old_index-new_index} indices!")
+            # print(f"Kart {kart_id} went backward {old_index-new_index} indices!")
+            pass
     else: # went forward
         traversed = set(range(old_index, new_index))
-        print(f"Kart {kart_id} went forward {new_index-old_index} indices!")
+        # print(f"Kart {kart_id} went forward {new_index-old_index} indices!")
 
     return traversed
 
@@ -40,7 +41,7 @@ def update_game(kart_id, loc_index, pos): # TODO: deal with pos
     """
     Handles updating position based on new kart positions
     """
-    print("Updating game state for kart", kart_id, "to index", loc_index)
+    # print("Updating game state for kart", kart_id, "to index", loc_index)
     new_index = loc_index
     new_pos = pos
     current_data = globals.get_kart_data().get(kart_id, None)
@@ -62,13 +63,16 @@ def update_game(kart_id, loc_index, pos): # TODO: deal with pos
         # check if kart passed the multi-path checkpoint
         if len(passed_checkpoints) == 1 and globals.multi_path_checkpoint["index"] in passed_checkpoints:
             if pos in globals.multi_path_checkpoint["points"]:
-                print(f"Kart {kart_id} passed Multi-Path Checkpoint at {passed_checkpoints} and recieved an item!")
+                pass
+                # print(f"Kart {kart_id} passed Multi-Path Checkpoint at {passed_checkpoints} and recieved an item!")
         else:
-            print(f"Kart {kart_id} passed Item Checkpoint at {passed_checkpoints} and recieved an item!")
+            # print(f"Kart {kart_id} passed Item Checkpoint at {passed_checkpoints} and recieved an item!")
+            pass
         event_uid = globals.get_uid()
         checkpoint = True
     else:
-        print("Kart passed no checkpoints")
+        pass
+        # print("Kart passed no checkpoints")
 
     globals.update_kart_data(kart_id, current_data)
     update_rankings()

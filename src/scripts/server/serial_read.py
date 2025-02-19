@@ -15,15 +15,18 @@ def handle_position_estimate(data):
     ''' 
     Takes in positon estimate from kart and updates game state
     '''
-    print(f"Position Estimate data recieved: {data}")
+    # print(f"Position Estimate data recieved: {data}")
     globals.GAME_STATE_CHANGED = False
     kart_id = data["from"]
     pos = (data['x'], data['y'])
     loc_index = data["loc_index"]
     event = update_game(kart_id, loc_index, pos)
     if event:
+        print("GOT ITEM")
+        # uid = globals.get_uid()
         send_item(kart_id, event)
     if globals.GAME_STATE_CHANGED:
+        # write_packet(build_get_item_packet())
         write_packet(build_ranking_update_packet(globals.get_kart_positions()))
     return
 
@@ -37,18 +40,20 @@ def handle_use_item(data):
         globals.seen_uids.add(uid)
         victims = use_item(kart_id, item)
         for victim, uid in victims:
-            write_packet(build_do_item_packet(victim, item, uid))
+            for i in range(10):
+                write_packet(build_do_item_packet(victim, item, uid))
     return
 
 def send_item(kart_id, event_uid):
-    write_packet(build_get_item_packet(kart_id, event_uid))
+    for i in range(10):
+        write_packet(build_get_item_packet(kart_id, event_uid))
 
 def write_packet(packet):
     packet += bytes([0] * (globals.PACKET_LEN_BYTES - len(packet)))
     with write_lock:
-        print("Writing packet twice: ", packet)
+        # print("Writing packet twice: ", packet)
         globals.ser.write(packet)
-        globals.ser.write(packet)
+        # globals.ser.write(packet)
         globals.ser.flush()
 
 def build_packet(tag, payload_bytes):
@@ -60,6 +65,7 @@ def build_packet(tag, payload_bytes):
 
 def build_ranking_update_packet(positions):
     # tag 4
+    # c
     print("Building ranking update packet")
     payload = struct.pack('<' + 'B' * len(positions), *positions)
     return build_packet(4, payload)
@@ -71,6 +77,7 @@ def build_do_item_packet(to_val, item, uid):
 
 def build_get_item_packet(to_val, uid):
     # tag 5
+    print("Building get item packet")
     payload = struct.pack('<II', to_val, uid)
     return build_packet(5, payload)
     
@@ -92,11 +99,12 @@ def read_packet(executor):
         return None
     tag = struct.unpack('<I', tag_bytes)[0]
 
-    print("Tag: ", tag)
+    # print("Tag: ", tag)
 
     if tag == 2:  # PositionEstimate: { u32 from; u32 x; u32 y; u32 loc_index}
+        print("RECIEVED POSITION ESTIMATE")
         payload = globals.ser.read(4 + 4 + 4 + 4)  # 8 bytes total
-        print("Recieving Position Estimate: ", payload)
+        # print("Recieving Position Estimate: ", payload)
         if len(payload) < 16:
             return None
         from_val, x, y, loc_index = struct.unpack('<IIII', payload)
