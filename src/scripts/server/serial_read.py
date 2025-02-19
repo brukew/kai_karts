@@ -66,6 +66,7 @@ def build_ranking_update_packet(positions):
     # tag 4
     # c
     print("Building ranking update packet")
+    # payload = struct.pack('<' + 'B' * len(positions) + 'B' * len(positions) + 'B' * len(positions), *positions, *x_positions, *y_positions)
     payload = struct.pack('<' + 'B' * len(positions), *positions)
     return build_packet(4, payload)
 
