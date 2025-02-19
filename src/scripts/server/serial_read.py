@@ -72,7 +72,19 @@ def build_ranking_update_packet(rankings, x_positions, y_positions):
     # u32 x_positions[NUM_KARTS];
     # u32 y_positions[NUM_KARTS];
     print("Building ranking update packet")
-    payload = struct.pack('<' + 'B' * len(rankings) + 'B' * len(x_positions) + 'B' * len(y_positions), rankings, x_positions, y_positions)
+
+    # Pad the lists if they are shorter than num_karts
+    if len(rankings) < globals.NUM_KARTS:
+        rankings = list(rankings) + [0] * (globals.NUM_KARTS - len(rankings))
+    if len(x_positions) < globals.NUM_KARTS:
+        x_positions = list(x_positions) + [0] * (globals.NUM_KARTS - len(x_positions))
+    if len(y_positions) < globals.NUM_KARTS:
+        y_positions = list(y_positions) + [0] * (globals.NUM_KARTS - len(y_positions))
+
+    payload = struct.pack(
+    '<' + 'B' * len(rankings) + 'I' * len(x_positions) + 'I' * len(y_positions),
+    *rankings, *x_positions, *y_positions
+    )
     return build_packet(4, payload)
 
 def build_do_item_packet(to_val, item, uid):

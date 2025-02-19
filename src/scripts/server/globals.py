@@ -7,10 +7,13 @@ global ITEM_TARGET
 global END_INDEX
 global seen_uids
 global GAME_STATE_CHANGED
+global NUM_KARTS
 
 import threading
 import random
 
+
+NUM_KARTS = 6
 
 SERIAL_PORT = "/dev/tty.usbmodem1301"
 BAUD_RATE = 115200
