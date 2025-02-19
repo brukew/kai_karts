@@ -18,7 +18,7 @@ def init():
     input_init(executor)
     while True:
         # print("Reading packet.")
-        packet = read_packet(executor)
+        packet = read_packet()
         time.sleep(0.01)
         if packet is None:
             continue 

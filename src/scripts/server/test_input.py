@@ -8,7 +8,7 @@ def run_ranking_update(*args):
     write_packet(packet)
 
 def run_get_item(*args):
-    # Example: args[0] is kart_id, args[1] is event_uid
+    # Example: args[0] is kart_id, args[1] is event_uid (last digit of uid is item)
     print("Get item command received.")
     if len(args) < 2:
         print("Usage: get_item <kart_id> <event_uid>")

@@ -50,11 +50,10 @@ def send_item(kart_id, event_uid):
 
 def write_packet(packet):
     packet += bytes([0] * (globals.PACKET_LEN_BYTES - len(packet)))
-    with write_lock:
-        # print("Writing packet twice: ", packet)
-        globals.ser.write(packet)
-        # globals.ser.write(packet)
-        globals.ser.flush()
+    # print("Writing packet twice: ", packet)
+    globals.ser.write(packet)
+    # globals.ser.write(packet)
+    globals.ser.flush()
 
 def build_packet(tag, payload_bytes):
     """Build a complete packet with start magic, tag, and payload."""
@@ -81,7 +80,7 @@ def build_get_item_packet(to_val, uid):
     payload = struct.pack('<II', to_val, uid)
     return build_packet(5, payload)
     
-def read_packet(executor):
+def read_packet():
     # look for magic number
     maybe_magic = bytes([0, 0, 0, 0])
     while True:
@@ -102,14 +101,13 @@ def read_packet(executor):
     # print("Tag: ", tag)
 
     if tag == 2:  # PositionEstimate: { u32 from; u32 x; u32 y; u32 loc_index}
-        print("RECIEVED POSITION ESTIMATE")
         payload = globals.ser.read(4 + 4 + 4 + 4)  # 8 bytes total
         # print("Recieving Position Estimate: ", payload)
         if len(payload) < 16:
             return None
         from_val, x, y, loc_index = struct.unpack('<IIII', payload)
-        thread = executor.submit(handle_position_estimate, {'from': from_val, 'x': x, 'y': y, 'loc_index': loc_index})
-        thread.result()
+        print(f"RECIEVED POSITION ESTIMATE FROM {from_val}")
+        handle_position_estimate({'from': from_val, 'x': x, 'y': y, 'loc_index': loc_index})
         return {'tag': 'PositionEstimate', 'from': from_val, 'x': x, 'y': y, 'loc_index': loc_index}
     
     elif tag == 3:  # UseItem: { u32 from; u32 item; u32 uid}
@@ -118,8 +116,7 @@ def read_packet(executor):
         if len(payload) < 12:
             return None
         from_val, item, uid= struct.unpack('<III', payload)
-        thread = executor.submit(handle_use_item, {'from': from_val, 'item': item, 'uid': uid})
-        thread.result()
+        handle_use_item({'from': from_val, 'item': item, 'uid': uid})
         return {'tag': 'UseItem', 'from': from_val, 'item': item, 'uid': uid}
     
     else:
